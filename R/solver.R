@@ -44,7 +44,7 @@ pilot_call<-function(Y,X,B,p,q,rank){
 #' @examples
 SolveThetaA <-
   function(ThetaStart=NULL,AStart=NULL,Y,X,B,tolTheta=1e-6,MaxItTheta=50,lambda,gamma = 0
-           ,seed=0819,rank,tolAll=1e-6,MaxItAll=20,tolA=1e-6,MaxItA=50,tau=1,m=1,method="LASSO",a=3.7,...) {
+           ,seed=0819,rank,tolAll=1e-6,MaxItAll=20,tolA=1e-6,MaxItA=50,tau=1,m=1,method="LASSO",a=3.7,family,...) {
     set.seed(seed) ## For generating ungiven ThetaStart
     n <- dim(Y)[2]
     q <- dim(Y)[1]
@@ -163,7 +163,7 @@ SolveThetaA <-
 
 solveAll<-function(Y,X,Tpoints,nbasis=20,grid=100,ThetaStart=NULL,AStart=NULL,tolTheta=1e-6,MaxItTheta=50,lambda
                     ,gamma = 0,seed=0819,rank,tolAll=1e-6,MaxItAll=20,tolA=1e-6,MaxItA=50,tau=1,m=1,method="LASSO",a=3.7
-                    ,plot=T,nplots=5,...){
+                    ,plot=T,nplots=5,family="con",...){
   ## To extract sublist, we should use list[subnames] not [[]].
   paraToBspline<-list(...)[names(list(...))[names(list(...)) %in% names(formals(create.bspline.basis))]]
   splineInfo<-do.call("generateB",args=c(list(Tpoints=Tpoints,nbasis=nbasis,grid=grid)
@@ -172,7 +172,7 @@ solveAll<-function(Y,X,Tpoints,nbasis=20,grid=100,ThetaStart=NULL,AStart=NULL,to
   ThetaA<-SolveThetaA(ThetaStart=ThetaStart,AStart=AStart,Y=Y,X=X,B=B,tolTheta=tolTheta
                        ,MaxItTheta=MaxItTheta,lambda=lambda,gamma = gamma,seed=seed
                        ,rank=rank,tolAll=tolAll,MaxItAll=MaxItAll,tolA=tolA,MaxItA=MaxItA
-                       ,tau=tau,m=m,method=method,a=a,...)
+                       ,tau=tau,m=m,method=method,a=a,family=family...)
   cat(range(splineInfo$gridlocation),"\n")
   if(plot==T){
     for(i in 1:nplots){

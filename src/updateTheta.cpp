@@ -15,6 +15,10 @@
 // \lambda_j: tunning parameter for \Theta_j
 // \tau: ISTA step-size
 
+double logit(double x){
+    return (1 / (1 + exp(-x))); 
+} 
+
 arma::mat Residual(const arma::mat *Y,const arma::mat *X,const arma::mat* B
                      ,const arma::mat* Theta,const arma::mat *A){
   int i;
@@ -36,6 +40,9 @@ arma::mat Residual(const arma::mat *Y,const arma::mat *X,const arma::mat* B
 
   arma::mat diff(Y->n_rows,Y->n_cols,arma::fill::zeros);
   for(i=0;i<A->n_cols;++i) diff+=X_mass.slice(i);
+  
+  // mu function
+  diff.for_each( logit );
 
   diff=(*Y-diff);
   return diff;

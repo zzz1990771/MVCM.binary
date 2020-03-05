@@ -1,5 +1,9 @@
 #include "ThetaA.h"
 
+double logitC(double x){
+    return (1 / (1 + exp(-x))); 
+} 
+
 arma::mat Residual_forC(const arma::mat *Y, const arma::mat *X, const arma::mat *B, const arma::mat* C){
   int i,j,q=Y->n_rows;
   arma::mat diff=*Y;
@@ -14,7 +18,7 @@ arma::mat Residual_forC(const arma::mat *Y, const arma::mat *X, const arma::mat 
     diff.col(i)=diff_temp;
     diff_temp.zeros();
   }
-
+  diff.for_each( logitC );
   diff=(*Y-diff);
   return diff;
 }
