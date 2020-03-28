@@ -21,6 +21,7 @@ arma::mat Residual_forC(const arma::mat *Y, const arma::mat *X, const arma::mat 
   for(i=0;i<Y->n_rows;++i){
 
     for(j=0;j<Y->n_cols;++j){
+      //change to negative likelihood for binary logit link
       diff(i,j) = (*Y)(i,j) - logitC(diff(i,j));
     }
   }
@@ -39,14 +40,12 @@ arma::mat nLogLikelihood_forC(const arma::mat *Y, const arma::mat *X, const arma
     for(j=0;j<X->n_rows;++j){
       diff_temp += (*X)(j,i)*secondPart.rows(j*q,(j+1)*q-1);
     }
-    //change to negative likelihood for binary logit link
-    //diff.col(i) = log(1+exp(diff_temp))-(*Y).col(i)*(diff_temp);
     diff.col(i)=diff_temp;
     diff_temp.zeros();
   }
   for(i=0;i<Y->n_rows;++i){
-
     for(j=0;j<Y->n_cols;++j){
+      //change to negative likelihood for binary logit link
       diff(i,j) = log(1+exp(diff(i,j)))-(*Y)(i,j)*(diff(i,j));
     }
   }
