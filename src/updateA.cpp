@@ -19,7 +19,7 @@ arma::mat gradA(const arma::mat *Y,const arma::mat *X,const arma::mat *Theta,
     grad_tempSum += grad_temp;
     // grad=grad+(-2.0)*(B->col(i))*(Y->col(i)-arma::kron((X->col(i)).t(),I_q)*(*Theta)*A->t()*B->col(i)).t()*(arma::kron((X->col(i)).t(),I_q))*(*Theta);
   }
-  grad=-2.0*grad_tempSum*(*Theta);
+  grad=-grad_tempSum*(*Theta);
   return(grad);
 }
 
@@ -44,8 +44,8 @@ arma::mat retractA(const arma::mat *direc,const double* stepSize,const arma::mat
 double objA(const arma::mat *Y,const arma::mat *X,const arma::mat *Theta,
               const arma::mat *B, const arma::mat *A){
   double obj=0.0;
-  arma::mat diff=Residual(Y,X,B,Theta,A);
-  diff %=diff;
+  arma::mat diff=nLogLikelihood(Y,X,B,Theta,A);
+  //diff %=diff;
   obj=arma::accu(diff);
   return obj;
 }

@@ -73,8 +73,13 @@ X<-rbind(rep(1,n),X)
 
 ## For non-spline produced functions:
 Y<-sapply(1:n,function(x){
-  Y[,x]=kronecker(t(X[,x]),
-                  diag(q))%*%Theta_true%*%(AtB_true[,x]+error_pca[,x])+error[,x]
+  
+  XThetaAtB <- kronecker(t(X[,x]),
+            diag(q))%*%Theta_true%*%(AtB_true[,x]+error_pca[,x])+error[,x]
+  mu <- apply(XThetaAtB,1,function(x) {1 / (1 + exp(-x))})
+  Y[,x]=rbinom(n = q,size = 1,prob = mu)
+    
+    
 })
 
 # gradH<-function(Theta){
@@ -113,12 +118,21 @@ system.time(pilot<-MVCM.binary::pilot_call(Y=Y,X=X,B=B,p=p,q=q,rank=rank))
 #               ,grid=grid, plot=T,nplots=1)
 # test_result<-result$Theta%*%t(result$A)
 # sum((test_result-Theta_true%*%t(A_true))^2)
+
+result1<-solveAll(ThetaStart=NULL,Y=Y,X=X,tolTheta=tol,MaxItTheta=MaxIt
+                  ,lambda=10,gamma = 2.0
+                  ,rank=r,tolAll=tol,MaxItAll=MaxIt,tolA=tol,MaxItA=MaxIt,tau=tau,seed =0819
+                  ,c_pilot=pilot,Tpoints=Tpoints,nbasis=k,rangeval=rangeval
+                  ,grid=grid, plot=T,nplots=1,method="lasso")
+result1$Theta
 result2<-solveAll(ThetaStart=NULL,Y=Y,X=X,tolTheta=tol,MaxItTheta=MaxIt
-                 ,lambda=lambda_e/10,gamma = 2.0
+                 ,lambda=50,gamma = 2.0
                  ,rank=r,tolAll=tol,MaxItAll=MaxIt,tolA=tol,MaxItA=MaxIt,tau=tau,seed =0819
                  ,c_pilot=pilot,Tpoints=Tpoints,nbasis=k,rangeval=rangeval
-                 ,grid=grid, plot=T,nplots=1,method="lasso")
+                 ,grid=grid, plot=T,nplots=1,method="scad")
+result2$Theta
 
+plot(Tpoints,result1$coefficients[1,])
 ## CV Error:
 
 system.time(thisER<-srrrVcmCvError(Kfolder = 5, Y=Y, X=X, Tpoints=Tpoints, nbasis=k

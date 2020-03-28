@@ -22,6 +22,7 @@ double logit(double x){
 arma::mat Residual(const arma::mat *Y,const arma::mat *X,const arma::mat* B
                      ,const arma::mat* Theta,const arma::mat *A){
   int i;
+  int j;
   // cube format of Theta:
   arma::cube Theta_cube((X->n_rows)*(Y->n_rows),A->n_cols,1);
   Theta_cube.slice(0)=*Theta;
@@ -41,10 +42,48 @@ arma::mat Residual(const arma::mat *Y,const arma::mat *X,const arma::mat* B
   arma::mat diff(Y->n_rows,Y->n_cols,arma::fill::zeros);
   for(i=0;i<A->n_cols;++i) diff+=X_mass.slice(i);
   
-  // mu function
-  diff.for_each( logit );
+  //Y - g^-1(ita)
+  for(i=0;i<Y->n_rows;++i){
 
-  diff=(*Y-diff);
+    for(j=0;j<Y->n_cols;++j){
+      diff(i,j) = (*Y)(i,j) - logit(diff(i,j));
+    }
+  }
+  return diff;
+}
+
+
+arma::mat nLogLikelihood(const arma::mat *Y,const arma::mat *X,const arma::mat* B
+                     ,const arma::mat* Theta,const arma::mat *A){
+  int i;
+  int j;
+  // cube format of Theta:
+  arma::cube Theta_cube((X->n_rows)*(Y->n_rows),A->n_cols,1);
+  Theta_cube.slice(0)=*Theta;
+  Theta_cube.reshape(Y->n_rows,X->n_rows,A->n_cols);
+
+  // cube format for the X in order multiplication Theta*X
+  arma::cube X_mass(Y->n_rows,Y->n_cols,A->n_cols);
+  for(i=0;i<A->n_cols;++i) X_mass.slice(i) = Theta_cube.slice(i)*(*X);
+  // X_mass.each_slice( [arma::mat r=X_temp] (arma::mat &K) { return K*r; }); // unsuccessful lambda function.
+
+  // Times B->t()**A, for the reason that cube dimension matching.
+  arma::cube beta(Y->n_cols,A->n_cols,1);
+  beta.slice(0)= B->t()*(*A); // arma::trans(A->t()*(*B));
+  beta.reshape(1,Y->n_cols,A->n_cols);
+  for(i=0;i<Y->n_rows;++i) X_mass(i,0,0,size(beta)) = X_mass(i,0,0,size(beta)) % beta;
+
+  arma::mat diff(Y->n_rows,Y->n_cols,arma::fill::zeros);
+  for(i=0;i<A->n_cols;++i) diff+=X_mass.slice(i);
+  
+  //change to negative likelihood for binary logit link
+  for(i=0;i<Y->n_rows;++i){
+
+    for(j=0;j<Y->n_cols;++j){
+      diff(i,j) = log(1+exp(diff(i,j)))-(*Y)(i,j)*(diff(i,j));
+    }
+  }
+  //diff=(*Y-diff);
   return diff;
 }
 
@@ -82,7 +121,7 @@ arma::mat grad_H(const arma::mat *Y,const arma::mat *X,const arma::mat* B,const 
     for(j=0;j < X->n_rows;++j) {
       gradH_temp.rows(j*q,(j+1)*q-1)=(*X)(j,i)*secondPart;
     }
-    sum_gradH += -2.0*gradH_temp;
+    sum_gradH += -gradH_temp;
    // sum_gradH +=-2.0*arma::kron(X->col(i),I_q)*(Y->col(i)-(arma::kron((X->col(i)).t(),I_q))*(*Theta)*(A->t())*B->col(i))*B->col(i).t()*(*A);
   }
   return(sum_gradH);
@@ -96,10 +135,11 @@ double objective_Theta(const arma::mat *Y,const arma::mat *X,const arma::mat* B,
   //construction error
   // for(i=0;i<Y->n_cols;++i) obj_Theta+=pow(arma::norm((Y->col(i)-(arma::kron((X->col(i)).t(),I_q))*(*Theta)*(A->t())*B->col(i)),"fro"),2.0);
 
-  arma::mat diff=Residual(Y,X,B,Theta,A);
-  diff %=diff;
+  arma::mat diff=nLogLikelihood(Y,X,B,Theta,A);
+  //get sqaure
+  //diff %=diff;
+  
   obj_Theta+=arma::accu(diff);
-
 
 
   //penalties

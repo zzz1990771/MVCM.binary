@@ -10,4 +10,7 @@ using namespace std;
 
 arma::mat Residual(const arma::mat *Y,const arma::mat *X,const arma::mat* B
                      ,const arma::mat* Theta,const arma::mat *A);
+
+arma::mat nLogLikelihood(const arma::mat *Y,const arma::mat *X,const arma::mat* B
+                     ,const arma::mat* Theta,const arma::mat *A);
 #endif

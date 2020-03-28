@@ -18,8 +18,39 @@ arma::mat Residual_forC(const arma::mat *Y, const arma::mat *X, const arma::mat 
     diff.col(i)=diff_temp;
     diff_temp.zeros();
   }
-  diff.for_each( logitC );
-  diff=(*Y-diff);
+  for(i=0;i<Y->n_rows;++i){
+
+    for(j=0;j<Y->n_cols;++j){
+      diff(i,j) = (*Y)(i,j) - logitC(diff(i,j));
+    }
+  }
+  //diff=(*Y-diff);
+  return diff;
+}
+
+arma::mat nLogLikelihood_forC(const arma::mat *Y, const arma::mat *X, const arma::mat *B, const arma::mat* C){
+  int i,j,q=Y->n_rows;
+  arma::mat diff=*Y;
+  arma::mat diff_temp(q,1,arma::fill::zeros);
+  arma::mat secondPart(C->n_rows,1);
+
+  for(i=0;i<Y->n_cols;++i){
+    secondPart=(*C)*B->col(i);
+    for(j=0;j<X->n_rows;++j){
+      diff_temp += (*X)(j,i)*secondPart.rows(j*q,(j+1)*q-1);
+    }
+    //change to negative likelihood for binary logit link
+    //diff.col(i) = log(1+exp(diff_temp))-(*Y).col(i)*(diff_temp);
+    diff.col(i)=diff_temp;
+    diff_temp.zeros();
+  }
+  for(i=0;i<Y->n_rows;++i){
+
+    for(j=0;j<Y->n_cols;++j){
+      diff(i,j) = log(1+exp(diff(i,j)))-(*Y)(i,j)*(diff(i,j));
+    }
+  }
+  //diff=(*Y-diff);
   return diff;
 }
 
@@ -36,7 +67,7 @@ arma::mat pilotGrad(const arma::mat *Y, const arma::mat *X, const arma::mat* B,c
     for(j=0;j<X->n_rows;++j){
       gradient_temp.rows(j*q,(j+1)*q-1)=(*X)(j,i)*secondPart;
     }
-    gradient += -2.0*gradient_temp;
+    gradient += -gradient_temp;
    // gradient +=-2.0*arma::kron(X->col(i),I_q)*(Y->col(i)-(arma::kron((X->col(i)).t(),I_q))*(*C)*B->col(i))*B->col(i).t();
   }
   return(gradient);
@@ -44,8 +75,8 @@ arma::mat pilotGrad(const arma::mat *Y, const arma::mat *X, const arma::mat* B,c
 
 double objPilot(const arma::mat *Y,const arma::mat *X,const arma::mat* B,const arma::mat* C){
   double obj_pilot=0.0;
-  arma::mat diff=Residual_forC(Y,X,B,C);
-  diff %=diff;
+  arma::mat diff=nLogLikelihood_forC(Y,X,B,C);
+  //diff %=diff;
   obj_pilot=arma::accu(diff);
   return obj_pilot;
 }
