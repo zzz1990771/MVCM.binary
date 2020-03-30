@@ -59,7 +59,7 @@ srrrVcmCvError <-
       cv_folder=c(cv_folder,sum((Y1hat[,group==i]-Y1[,group==i])^2)/(dim(Y1)[1]*sum(group==i)))
     }
     cvError <- sum((Y1-Y1hat)^2)/(dim(Y)[1]*dim(Y)[2])
-
+    rm(.Random.seed, envir=.GlobalEnv)
     return(c(lambda=lambda,gamma=gamma,rank=rank,cvError=cvError,cv_folder=cv_folder))
     ## CV error
   }

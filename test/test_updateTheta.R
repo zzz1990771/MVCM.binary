@@ -120,7 +120,7 @@ system.time(pilot<-MVCM.binary::pilot_call(Y=Y,X=X,B=B,p=p,q=q,rank=rank))
 # sum((test_result-Theta_true%*%t(A_true))^2)
 
 result1<-solveAll(ThetaStart=NULL,Y=Y,X=X,tolTheta=tol,MaxItTheta=MaxIt
-                  ,lambda=10,gamma = 2.0
+                  ,lambda=35,gamma = 2.0
                   ,rank=r,tolAll=tol,MaxItAll=MaxIt,tolA=tol,MaxItA=MaxIt,tau=tau,seed =0819
                   ,c_pilot=pilot,Tpoints=Tpoints,nbasis=k,rangeval=rangeval
                   ,grid=grid, plot=T,nplots=1,method="lasso")
@@ -131,6 +131,23 @@ result2<-solveAll(ThetaStart=NULL,Y=Y,X=X,tolTheta=tol,MaxItTheta=MaxIt
                  ,c_pilot=pilot,Tpoints=Tpoints,nbasis=k,rangeval=rangeval
                  ,grid=grid, plot=T,nplots=1,method="scad")
 result2$Theta
+
+compare_theta <- function(Theta_fitted,Theta_true){
+  N <- dim(Theta_true)[1]
+  selected_index <- !(apply(abs(Theta_fitted),1,sum)<=0.05)
+  true_index <- !(apply(abs(Theta_true),1,sum)<=0.05)
+  TPR <- sum((selected_index==1)&(true_index==1))/N
+  FPR <- sum((selected_index==1)&(true_index==0))/N
+  TNR <- sum((selected_index==0)&(true_index==0))/N
+  FNR <- sum((selected_index==0)&(true_index==1))/N
+  return(c(TPR=TPR,FPR=FPR,TNR=TNR,FNR=FNR))
+}
+
+compare_theta(result2$Theta,Theta_true)
+
+
+
+
 
 plot(Tpoints,result1$coefficients[1,])
 ## CV Error:

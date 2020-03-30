@@ -157,6 +157,7 @@ SolveThetaA <-
       this_tol<-sum((C-C_pre)^2,na.rm=T)
       this_iter<-this_iter+1
     }
+    rm(.Random.seed, envir=.GlobalEnv)
     return(list(Theta=Theta,A=A,coefficients=Theta%*%t(A)%*%B,lambda=lambda_all))
   }
 
@@ -182,5 +183,6 @@ solveAll<-function(Y,X,Tpoints,nbasis=20,grid=100,ThetaStart=NULL,AStart=NULL,to
            ,main=paste0("The No.",i," Coefficients Functions"),type="l")
     }
   }
+  ThetaA$splineInfo <- splineInfo
   ThetaA
 }
