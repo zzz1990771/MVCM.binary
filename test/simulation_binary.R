@@ -6,15 +6,15 @@ for(m in 1:M){
 #set.seed(floor(runif(1,1,1000000)))
 library(fda)
 ## parameters:
-n<-200
+n<-2000
 p<-51  # including the constant covariate
 p0<-11 # non-zero covariates, choose to be the top covariates
 q<-15
-r<-4
+r<-2
 rank<-r
 k<-12
 nbasis<-k
-lambda<-45
+lambda<-100
 lambda_list <- seq(50,100)
 gamma<-0
 tol<-0.0000001
@@ -77,7 +77,7 @@ X<-rbind(rep(1,n),X)
 Y<-sapply(1:n,function(x){
   
   XThetaAtB <- kronecker(t(X[,x]),
-            diag(q))%*%Theta_true%*%(AtB_true[,x]+error_pca[,x])
+            diag(q))%*%Theta_true%*%(AtB_true[,x])
   mu <- apply(XThetaAtB,1,function(x) {1 / (1 + exp(-x))})
   rbinom(n = q,size = 1,prob = mu)
     
@@ -112,6 +112,8 @@ for (p_cut in seq(0,1,0.01)){
 mr_best <- max(mr_list)
 
 
+diff_f <- (result2$coefficients - Theta_true%*%(AtB_true))^2
+
 compare_theta <- function(Theta_fitted,Theta_true,tolerance = 0.05){
   N <- dim(Theta_true)[1]
   selected_index <- !(apply(abs(Theta_fitted),1,sum)<=tolerance)
@@ -125,7 +127,7 @@ compare_theta <- function(Theta_fitted,Theta_true,tolerance = 0.05){
 
 result_matrix[m,1:4] <- compare_theta(result2$Theta,Theta_true)
 
-result_matrix[m,5] <- mean((result2$Theta-Theta_true)^2)
+result_matrix[m,5] <- mean(apply(diff_f,1,sum)/q)
 result_matrix[m,6] <- mr_best
 result_matrix[m,7] <- auc
 
@@ -135,4 +137,13 @@ colnames(result_matrix) <- c("TPR","FPR","TNR","FNR","MSE of Theta","MR","AUC")
 
 apply(result_matrix,2,mean)
 apply(result_matrix,2,sd)
+
+
+i=2
+plot(Tpoints,(Theta_true%*%(AtB_true))[i,],col="blue")
+
+points(Tpoints
+       ,result2$coefficients[i,]
+       ,xlab="Time",ylab="Function Values"
+       ,main=paste0("The No.",i," Coefficients Functions"),col="red")
 
