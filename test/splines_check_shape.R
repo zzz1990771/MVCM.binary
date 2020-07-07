@@ -12,10 +12,10 @@ r<-4
 rank<-r
 k<-30
 nbasis<-k
-lambda_e<-100000
+lambda<-0.0001
 gamma<-0
 tol<-0.0000001
-MaxIt<-100
+MaxIt<-10
 tau<-1
 rhoX<-0.3 # the base coefficients of X, i.e., cov*(x_j1,x_j2)=rho^|j1-j2|
 sigmaX<-matrix(rep(0,(p-1)*(p-1)),nrow=p-1) ## for covariance matrix of X
@@ -61,7 +61,7 @@ system.time(pilot<-MVCM.binary::pilot_call(Y=Y,X=X,B=B,p=p,q=q,rank=rank))
 
 
 result2<-solveAll(ThetaStart=NULL,Y=Y,X=X,tolTheta=tol,MaxItTheta=MaxIt
-                  ,lambda=45,gamma = 2.0
+                  ,lambda=lambda,gamma = 2.0
                   ,rank=r,tolAll=tol,MaxItAll=MaxIt,tolA=tol,MaxItA=MaxIt,tau=tau
                   ,c_pilot=pilot,Tpoints=Tpoints,nbasis=k,rangeval=rangeval
                   ,grid=grid, plot=T,nplots=1,method="scad")

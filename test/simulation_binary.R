@@ -1,6 +1,6 @@
 
-M=100
-result_matrix <- matrix(0,ncol=6,nrow = M)
+M=1
+result_matrix <- matrix(0,ncol=7,nrow = M)
 X_list <- list()
 for(m in 1:M){
 #set.seed(floor(runif(1,1,1000000)))
@@ -12,9 +12,10 @@ p0<-11 # non-zero covariates, choose to be the top covariates
 q<-15
 r<-4
 rank<-r
-k<-30
+k<-12
 nbasis<-k
-lambda<-50
+lambda<-45
+lambda_list <- seq(50,100)
 gamma<-0
 tol<-0.0000001
 MaxIt<-100
@@ -89,7 +90,7 @@ system.time(pilot<-MVCM.binary::pilot_call(Y=Y,X=X,B=B,p=p,q=q,rank=rank))
 
 
 result2<-solveAll(ThetaStart=NULL,Y=Y,X=X,tolTheta=tol,MaxItTheta=MaxIt
-                 ,lambda=47,gamma = 2.0
+                 ,lambda=lambda,gamma = 2.0
                  ,rank=r,tolAll=tol,MaxItAll=MaxIt,tolA=tol,MaxItA=MaxIt,tau=tau
                  ,c_pilot=pilot,Tpoints=Tpoints,nbasis=k,rangeval=rangeval
                  ,grid=grid, plot=T,nplots=1,method="scad")
@@ -103,7 +104,12 @@ Y1hat <- sapply(1:ncol(Y), function(x){
 
 auc <- AUC::auc(AUC::roc(as.vector(Y1hat),as.factor(as.vector(Y))))
 
-
+mr_list <- c()
+for (p_cut in seq(0,1,0.01)){
+  mr <- mean((Y1hat>p_cut)==Y)
+  mr_list <- c(mr_list,mr)
+}
+mr_best <- max(mr_list)
 
 
 compare_theta <- function(Theta_fitted,Theta_true,tolerance = 0.05){
@@ -119,11 +125,14 @@ compare_theta <- function(Theta_fitted,Theta_true,tolerance = 0.05){
 
 result_matrix[m,1:4] <- compare_theta(result2$Theta,Theta_true)
 
-result_matrix[m,5] <- sum((result2$Theta-Theta_true)^2)
-result_matrix[m,6] <- auc
+result_matrix[m,5] <- mean((result2$Theta-Theta_true)^2)
+result_matrix[m,6] <- mr_best
+result_matrix[m,7] <- auc
 
 }
 
-apply(result_matrix,2,mean)
+colnames(result_matrix) <- c("TPR","FPR","TNR","FNR","MSE of Theta","MR","AUC")
 
+apply(result_matrix,2,mean)
+apply(result_matrix,2,sd)
 
