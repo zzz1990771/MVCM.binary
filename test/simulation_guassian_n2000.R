@@ -1,11 +1,11 @@
-M=100
+M=50
 result_matrix <- matrix(0,ncol=7,nrow = M)
 X_list <- list()
 for(m in 1:M){
   set.seed(floor(runif(1,1,1000000)))
   library(fda)
   ## parameters:
-  n<-200
+  n<-2000
   p<-51  # including the constant covariate
   p0<-11 # non-zero covariates, choose to be the top covariates
   q<-15
@@ -13,7 +13,7 @@ for(m in 1:M){
   rank<-r
   k<-12
   nbasis<-k
-  lambda<-450
+  lambda<-900
   lambda_list <- seq(50,100)
   gamma<-0
   tol<-0.0000001
