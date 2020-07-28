@@ -6,15 +6,15 @@ for(m in 1:M){
 #set.seed(floor(runif(1,1,1000000)))
 library(fda)
 ## parameters:
-n<-1000
-p<-31  # including the constant covariate
+n<-350
+p<-51  # including the constant covariate
 p0<-11 # non-zero covariates, choose to be the top covariates
-q<-10
-r<-2
+q<-15
+r<-4
 rank<-r
-k<-8
+k<-30
 nbasis<-k
-lambda<-30
+lambda<-52
 gamma<-0
 tol<-0.0000001
 MaxIt<-100
@@ -49,13 +49,13 @@ B<-generateB(Tpoints=Tpoints,nbasis=k,rangeval=rangeval)$B # For pilot generatin
 AtB_true<-matrix(rep(0,r*n),nrow=r) ## For rangeval=c(0,1) only
 for(i in 1:(r/2)){
   for(j in 1:n)
-    AtB_true[i,j]<-sin(pi*i*Tpoints[j])*sqrt(0.2)
+    AtB_true[i,j]<-sin(2*pi*i*Tpoints[j])*sqrt(2)
   # AtB_true[i,j]<-exp(-1*i*Tpoints[j])/sqrt(1/(2*i)*(1-exp(-2*i)))
 }
 for(i in (r/2+1):r){
   for(j in 1:n){
     # AtB_true[i,j]<-exp(-1*i*Tpoints[j])/sqrt(1/(2*i)*(1-exp(-2*i)))
-    AtB_true[i,j]<-cos(pi*i*Tpoints[j])*sqrt(0.2)
+    AtB_true[i,j]<-cos(2*pi*i*Tpoints[j])*sqrt(2)
   }
 }
 
@@ -69,42 +69,48 @@ X<-t(MASS::mvrnorm(n=n,mu=rep(0,p-1),Sigma=sigmaX))
 X<-rbind(rep(1,n),X)
 ## for error term:
  #error<-matrix(rnorm(n*q,sd=sigma),nrow=q)
- #error_pca = matrix(rnorm(n*r, sd = sigma), nrow = r)
+ error_pca = matrix(rnorm(n*r, sd = sigma), nrow = r)
 # error<-matrix(0,q,n)
 
 ## For non-spline produced functions:
 Y<-sapply(1:n,function(x){
   
   XThetaAtB <- kronecker(t(X[,x]),
-            diag(q))%*%Theta_true%*%(AtB_true[,x]+0)
+            diag(q))%*%Theta_true%*%(AtB_true[,x]+error_pca[,x])
   mu <- apply(XThetaAtB,1,function(x) {1 / (1 + exp(-x))})
   rbinom(n = q,size = 1,prob = mu)
     
     
 })
 
+X_test <- X[,201:350]
+Y_test <- Y[,201:350]
 
-#system.time(pilot<-MVCM.binary::pilot_call(Y=Y,X=X,B=B,p=p,q=q,rank=rank))
+X <- X[,1:200]
+Y <- Y[,1:200]
+
+system.time(pilot<-MVCM.binary::pilot_call(Y=Y,X=X,B=B,p=p,q=q,rank=rank))
 
 
 
 result2<-solveAll(ThetaStart=NULL,Y=Y,X=X,tolTheta=tol,MaxItTheta=MaxIt
                  ,lambda=lambda,gamma = 2.0
                  ,rank=r,tolAll=tol,MaxItAll=MaxIt,tolA=tol,MaxItA=MaxIt,tau=tau
-                 ,Tpoints=Tpoints,nbasis=k,rangeval=rangeval
+                 ,c_pilot=pilot,Tpoints=Tpoints[1:200],nbasis=k,rangeval=rangeval
                  ,grid=grid, plot=T,nplots=1,method="scad")
 
-
-Y1hat <- sapply(1:ncol(Y), function(x){
-  uhat <- kronecker(t(X[,x]),
-                   diag(nrow(Y)))%*%(result2$Theta)%*%t(result2$A)%*%B[,x]
+dim(result2$splineInfo$B)
+dim(B)
+Y1hat <- sapply(1:ncol(Y_test), function(x){
+  uhat <- kronecker(t(X_test[,x]),
+                   diag(nrow(Y_test)))%*%(result2$Theta)%*%t(result2$A)%*%B[,(200+x)]
   (1 / (1 + exp(-uhat)))
 })
 
-auc <- AUC::auc(AUC::roc(as.vector(Y1hat),as.factor(as.vector(Y))))
+auc <- AUC::auc(AUC::roc(as.vector(Y1hat),as.factor(as.vector(Y_test))))
 
 
-
+diff_f <- (result2$coefficients - Theta_true%*%(AtB_true[,1:200]))^2
 
 compare_theta <- function(Theta_fitted,Theta_true,tolerance = 0.05){
   N <- dim(Theta_true)[1]
@@ -119,20 +125,17 @@ compare_theta <- function(Theta_fitted,Theta_true,tolerance = 0.05){
 
 result_matrix[m,1:4] <- compare_theta(result2$Theta,Theta_true)
 
-result_matrix[m,5] <- sum((result2$Theta-Theta_true)^2)
+result_matrix[m,5] <- mean(apply(diff_f,1,sum)/q)
 result_matrix[m,6] <- auc
 
 }
 
-round(apply(result_matrix,2,mean),4)
+apply(result_matrix,2,mean)
 
-
-par(mfrow=c(2,2))
-for(i in c(2,5,180,200)){
-  plot(Tpoints,(Theta_true%*%(AtB_true))[i,],col="blue")
-  points(Tpoints
-         ,((result2$Theta)%*%t(result2$A)%*%(result2$splineInfo$B))[i,]
-         ,xlab="Time",ylab="Function Values"
-         ,main=paste0("The No.",i," Coefficients Functions"),col="red")
-}
+i=150
+plot(Tpoints,(Theta_true%*%(AtB_true))[i,],col="blue")
+points(Tpoints[1:200]
+       ,result2$coefficients[i,]
+       ,xlab="Time",ylab="Function Values"
+       ,main=paste0("The No.",i," Coefficients Functions"),col="red")
 

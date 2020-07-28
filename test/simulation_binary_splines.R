@@ -1,5 +1,5 @@
 
-M=100
+M=1
 result_matrix <- matrix(0,ncol=6,nrow = M)
 X_list <- list()
 for(m in 1:M){
@@ -10,11 +10,11 @@ n<-200
 p<-51  # including the constant covariate
 p0<-11 # non-zero covariates, choose to be the top covariates
 q<-15
-r<-4
+r<-2
 rank<-r
-k<-30
+k<-15
 nbasis<-k
-lambda<-50
+lambda<-30
 gamma<-0
 tol<-0.0000001
 MaxIt<-100
@@ -42,7 +42,7 @@ B<-generateB(Tpoints=Tpoints,nbasis=k,rangeval=rangeval)$B # For pilot generatin
 
 # For spline produced functions:
 A<-matrix(rnorm(k*r),nrow=k)
-A_true<-qr.Q(qr(A))
+A_true<-qr.Q(qr(A))/10
 c_true<-Theta_true%*%t(A_true)
 
 ## For nonspline produced functions, use sin/exp to make normality constraint easy to get.
@@ -91,14 +91,14 @@ Y<-sapply(1:n, function(x){
 # })
 
 
-system.time(pilot<-MVCM.binary::pilot_call(Y=Y,X=X,B=B,p=p,q=q,rank=rank))
+#system.time(pilot<-MVCM.binary::pilot_call(Y=Y,X=X,B=B,p=p,q=q,rank=rank))
 
 
 
 result2<-solveAll(ThetaStart=NULL,Y=Y,X=X,tolTheta=tol,MaxItTheta=MaxIt
-                 ,lambda=45,gamma = 2.0
+                 ,lambda=lambda,gamma = 2.0
                  ,rank=r,tolAll=tol,MaxItAll=MaxIt,tolA=tol,MaxItA=MaxIt,tau=tau
-                 ,c_pilot=pilot,Tpoints=Tpoints,nbasis=k,rangeval=rangeval
+                 ,Tpoints=Tpoints,nbasis=k,rangeval=rangeval
                  ,grid=grid, plot=T,nplots=1,method="scad")
 
 
@@ -131,6 +131,14 @@ result_matrix[m,6] <- auc
 
 }
 
-apply(result_matrix,2,mean)
+round(apply(result_matrix,2,mean),2)
 
-
+par(mfrow=c(2,2))
+for(i in c(1,5,10,200)){
+  plot(Tpoints,(Theta_true%*%t(A_true)%*%B)[i,],col="blue")
+  
+  points(Tpoints
+         ,((result2$Theta)%*%t(result2$A)%*%(result2$splineInfo$B))[i,]
+         ,xlab="Time",ylab="Function Values"
+         ,main=paste0("The No.",i," Coefficients Functions"),col="red")
+}

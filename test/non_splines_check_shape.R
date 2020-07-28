@@ -9,7 +9,7 @@ r<-4
 rank<-r
 k<-30
 nbasis<-k
-lambda<-50
+lambda<-45
 gamma<-0
 tol<-0.0000001
 MaxIt<-100
@@ -90,7 +90,7 @@ system.time(pilot<-MVCM.binary::pilot_call(Y=Y,X=X,B=B,p=p,q=q,rank=rank))
 
 
 result2<-solveAll(ThetaStart=NULL,Y=Y,X=X,tolTheta=tol,MaxItTheta=MaxIt
-                  ,lambda=45,gamma = 2.0
+                  ,lambda=lambda,gamma = 2.0
                   ,rank=r,tolAll=tol,MaxItAll=MaxIt,tolA=tol,MaxItA=MaxIt,tau=tau
                   ,c_pilot=pilot,Tpoints=Tpoints,nbasis=k,rangeval=rangeval
                   ,grid=grid, plot=T,nplots=1,method="scad")
@@ -105,5 +105,9 @@ points(Tpoints
      ,xlab="Time",ylab="Function Values"
      ,main=paste0("The No.",i," Coefficients Functions"),col="red")
 
-
+Y1hat <- sapply(1:ncol(Y), function(x){
+  uhat <- kronecker(t(X[,x]),
+                    diag(nrow(Y)))%*%(result2$Theta)%*%t(result2$A)%*%B[,(x)]
+  (1 / (1 + exp(-uhat)))
+})
 

@@ -6,15 +6,15 @@ for(m in 1:M){
 #set.seed(floor(runif(1,1,1000000)))
 library(fda)
 ## parameters:
-n<-1000
-p<-31  # including the constant covariate
+n<-200
+p<-51  # including the constant covariate
 p0<-11 # non-zero covariates, choose to be the top covariates
-q<-10
-r<-2
+q<-15
+r<-4
 rank<-r
-k<-8
+k<-30
 nbasis<-k
-lambda<-30
+lambda<-45
 gamma<-0
 tol<-0.0000001
 MaxIt<-100
@@ -49,13 +49,13 @@ B<-generateB(Tpoints=Tpoints,nbasis=k,rangeval=rangeval)$B # For pilot generatin
 AtB_true<-matrix(rep(0,r*n),nrow=r) ## For rangeval=c(0,1) only
 for(i in 1:(r/2)){
   for(j in 1:n)
-    AtB_true[i,j]<-sin(pi*i*Tpoints[j])*sqrt(0.2)
+    AtB_true[i,j]<-sin(pi*i*Tpoints[j])*sqrt(2)
   # AtB_true[i,j]<-exp(-1*i*Tpoints[j])/sqrt(1/(2*i)*(1-exp(-2*i)))
 }
 for(i in (r/2+1):r){
   for(j in 1:n){
     # AtB_true[i,j]<-exp(-1*i*Tpoints[j])/sqrt(1/(2*i)*(1-exp(-2*i)))
-    AtB_true[i,j]<-cos(pi*i*Tpoints[j])*sqrt(0.2)
+    AtB_true[i,j]<-cos(pi*i*Tpoints[j])*sqrt(2)
   }
 }
 
@@ -69,7 +69,7 @@ X<-t(MASS::mvrnorm(n=n,mu=rep(0,p-1),Sigma=sigmaX))
 X<-rbind(rep(1,n),X)
 ## for error term:
  #error<-matrix(rnorm(n*q,sd=sigma),nrow=q)
- #error_pca = matrix(rnorm(n*r, sd = sigma), nrow = r)
+ error_pca = matrix(rnorm(n*r, sd = sigma), nrow = r)
 # error<-matrix(0,q,n)
 
 ## For non-spline produced functions:
@@ -128,7 +128,7 @@ round(apply(result_matrix,2,mean),4)
 
 
 par(mfrow=c(2,2))
-for(i in c(2,5,180,200)){
+for(i in c(1,5,10,200)){
   plot(Tpoints,(Theta_true%*%(AtB_true))[i,],col="blue")
   points(Tpoints
          ,((result2$Theta)%*%t(result2$A)%*%(result2$splineInfo$B))[i,]
